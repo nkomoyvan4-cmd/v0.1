@@ -1,0 +1,122 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <iomanip>
+
+using namespace std;
+
+class Person {
+private:
+    string name;
+    string surname;
+    vector<double> homework;
+    double exam;
+    double finalGrade;
+
+public:
+    // Constructor
+    Person() : exam(0.0), finalGrade(0.0) {}
+
+    // Copy constructor
+    Person(const Person& other) {
+        name = other.name;
+        surname = other.surname;
+        homework = other.homework;
+        exam = other.exam;
+        finalGrade = other.finalGrade;
+    }
+
+    // Assignment-copy operator
+    Person& operator=(const Person& other) {
+        if (this != &other) {
+            name = other.name;
+            surname = other.surname;
+            homework = other.homework;
+            exam = other.exam;
+            finalGrade = other.finalGrade;
+        }
+        return *this;
+    }
+
+    // Destructor
+    ~Person() {}
+
+    // Input operator
+    friend istream& operator>>(istream& in, Person& p) {
+        cout << "Enter first name: ";
+        in >> p.name;
+
+        cout << "Enter surname: ";
+        in >> p.surname;
+
+        int n;
+        cout << "Number of homework results: ";
+        in >> n;
+
+        p.homework.clear();
+
+        for (int i = 0; i < n; i++) {
+            double grade;
+            cout << "Homework " << i + 1 << ": ";
+            in >> grade;
+            p.homework.push_back(grade);
+        }
+
+        cout << "Enter exam grade: ";
+        in >> p.exam;
+
+        return in;
+    }
+
+    // Output operator
+    friend ostream& operator<<(ostream& out, const Person& p) {
+        out << left << setw(15) << p.name
+            << setw(15) << p.surname
+            << right << fixed << setprecision(2)
+            << p.finalGrade;
+        return out;
+    }
+
+    // Calculate final grade using the average
+    void calculateAverage() {
+        double sum = 0.0;
+
+        for (double grade : homework) {
+            sum += grade;
+        }
+
+        double average = homework.empty()
+            ? 0.0
+            : sum / homework.size();
+
+        finalGrade = 0.4 * average + 0.6 * exam;
+    }
+};
+
+int main() {
+    int n;
+
+    cout << "How many students? ";
+    cin >> n;
+
+    vector<Person> students(n);
+
+    for (int i = 0; i < n; i++) {
+        cout << "\nStudent " << i + 1 << '\n';
+        cin >> students[i];
+        students[i].calculateAverage();
+    }
+
+    cout << "\nFinal grades using Average:\n";
+    cout << left << setw(15) << "Name"
+         << setw(15) << "Surname"
+         << "Final_Point(Aver.)\n";
+
+    cout << string(45, '-') << '\n';
+
+    for (const Person& student : students) {
+        cout << student << '\n';
+    }
+
+    return 0;
+}
