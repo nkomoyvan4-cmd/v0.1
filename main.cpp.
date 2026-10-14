@@ -1,7 +1,9 @@
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
 
@@ -14,17 +16,16 @@ private:
     double finalGrade;
 
 public:
-    // Constructor
+    // Default constructor
     Person() : exam(0.0), finalGrade(0.0) {}
 
     // Copy constructor
-    Person(const Person& other) {
-        name = other.name;
-        surname = other.surname;
-        homework = other.homework;
-        exam = other.exam;
-        finalGrade = other.finalGrade;
-    }
+    Person(const Person& other)
+        : name(other.name),
+          surname(other.surname),
+          homework(other.homework),
+          exam(other.exam),
+          finalGrade(other.finalGrade) {}
 
     // Assignment-copy operator
     Person& operator=(const Person& other) {
@@ -39,30 +40,44 @@ public:
     }
 
     // Destructor
-    ~Person() {}
+    ~Person() = default;
 
     // Input operator
     friend istream& operator>>(istream& in, Person& p) {
-        cout << "Enter first name: ";
+        cout << "First name: ";
         in >> p.name;
 
-        cout << "Enter surname: ";
+        cout << "Surname: ";
         in >> p.surname;
-
-        int n;
-        cout << "Number of homework results: ";
-        in >> n;
 
         p.homework.clear();
 
-        for (int i = 0; i < n; i++) {
-            double grade;
-            cout << "Homework " << i + 1 << ": ";
+        cout << "Enter homework grades one by one.\n";
+        cout << "Enter -1 when finished.\n";
+
+        double grade;
+
+        while (true) {
+            cout << "Homework grade: ";
             in >> grade;
+
+            if (!in) {
+                return in;
+            }
+
+            if (grade == -1) {
+                break;
+            }
+
+            if (grade < 0 || grade > 10) {
+                cout << "Grade must be between 0 and 10.\n";
+                continue;
+            }
+
             p.homework.push_back(grade);
         }
 
-        cout << "Enter exam grade: ";
+        cout << "Exam grade (0-10): ";
         in >> p.exam;
 
         return in;
@@ -74,45 +89,95 @@ public:
             << setw(15) << p.surname
             << right << fixed << setprecision(2)
             << p.finalGrade;
+
         return out;
     }
 
-    // Calculate final grade using the average
-    void calculateAverage() {
-        double sum = 0.0;
-
-        for (double grade : homework) {
-            sum += grade;
+    // Calculate final grade using average or median
+    void calculateFinalGrade(char method) {
+        if (homework.empty()) {
+            finalGrade = 0.6 * exam;
+            return;
         }
 
-        double average = homework.empty()
-            ? 0.0
-            : sum / homework.size();
+        double homeworkResult = 0.0;
 
-        finalGrade = 0.4 * average + 0.6 * exam;
+        if (method == 'A' || method == 'a') {
+            for (double grade : homework) {
+                homeworkResult += grade;
+            }
+
+            homeworkResult /= homework.size();
+        } else {
+            vector<double> sortedHomework = homework;
+
+            sort(sortedHomework.begin(), sortedHomework.end());
+
+            size_t middle = sortedHomework.size() / 2;
+
+            if (sortedHomework.size() % 2 == 0) {
+                homeworkResult =
+                    (sortedHomework[middle - 1] +
+                     sortedHomework[middle]) / 2.0;
+            } else {
+                homeworkResult = sortedHomework[middle];
+            }
+        }
+
+        finalGrade = 0.4 * homeworkResult + 0.6 * exam;
     }
 };
 
 int main() {
-    int n;
+    int numberOfStudents;
+    char method;
 
-    cout << "How many students? ";
-    cin >> n;
+    cout << "Choose calculation method:\n";
+    cout << "A - Average\n";
+    cout << "M - Median\n";
+    cout << "Your choice: ";
+    cin >> method;
 
-    vector<Person> students(n);
-
-    for (int i = 0; i < n; i++) {
-        cout << "\nStudent " << i + 1 << '\n';
-        cin >> students[i];
-        students[i].calculateAverage();
+    if (method != 'A' && method != 'a' &&
+        method != 'M' && method != 'm') {
+        cout << "Invalid calculation method.\n";
+        return 1;
     }
 
-    cout << "\nFinal grades using Average:\n";
+    cout << "How many students? ";
+    cin >> numberOfStudents;
+
+    if (numberOfStudents <= 0) {
+        cout << "Number of students must be positive.\n";
+        return 1;
+    }
+
+    vector<Person> students(numberOfStudents);
+
+    for (int i = 0; i < numberOfStudents; i++) {
+        cout << "\nStudent " << i + 1 << '\n';
+
+        cin >> students[i];
+
+        if (!cin) {
+            cout << "Invalid input.\n";
+            return 1;
+        }
+
+        students[i].calculateFinalGrade(method);
+    }
+
+    cout << "\nFinal grades using "
+         << ((method == 'A' || method == 'a')
+                 ? "Average"
+                 : "Median")
+         << ":\n";
+
     cout << left << setw(15) << "Name"
          << setw(15) << "Surname"
-         << "Final_Point(Aver.)\n";
+         << "Final_Point\n";
 
-    cout << string(45, '-') << '\n';
+    cout << string(42, '-') << '\n';
 
     for (const Person& student : students) {
         cout << student << '\n';
